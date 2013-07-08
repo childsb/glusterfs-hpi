@@ -1,4 +1,4 @@
-noinst_PROGRAMS = glfsxmp
-glfsxmp_SOURCES = glfsxmp.c
-glfsxmp_CFLAGS = $(GLFS_CFLAGS) -Wall
-glfsxmp_LDADD = $(GLFS_LIBS)
+noinst_PROGRAMS = glfs_hpi
+glfs_SOURCES = glfs_hpi.c glfs_hpi_wrap.c
+glfs_CFLAGS = $(GLFS_CFLAGS) -Wall
+glfs_LDADD = $(GLFS_LIBS)

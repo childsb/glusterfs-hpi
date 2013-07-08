@@ -1,2 +1,6 @@
 #!/bin/sh
-swig -java -package org.gluster.hadoop -outdir org/gluster/hadoop glfs-hp.i
+rm -rf org
+mkdir  -p org/gluster/hadoop/
+swig -java -package org.gluster.hadoop -outdir org/gluster/hadoop glfs.i
+gcc -c glfs_wrap.c  -I/usr/java/latest/include -I/usr/java/latest/include/linux
+ld -G glfs_wrap.o glfs.o -o glfs.so
