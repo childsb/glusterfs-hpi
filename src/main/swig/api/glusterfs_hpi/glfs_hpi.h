@@ -1,5 +1,6 @@
-# typedef struct glfs;
-# typedef struct glfs glfs_t;
+struct glfs;
+typedef struct glfs glfs_t;
+
 
 glfs_t *glfs_new (const char *volname);
 
