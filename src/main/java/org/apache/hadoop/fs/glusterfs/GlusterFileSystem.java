@@ -19,7 +19,8 @@
 
 /**
  * Implements the Hadoop FileSystem Interface to allow applications to store
- * files on GlusterFS and run Map/Reduce jobs on the data.
+ * files on GlusterFS and run Map/Reduce jobs on the data.  This code does NOT perform a CRC 
+ * on files.
  * 
  * gluster file systems are specified with the glusterfs:// prefix.
  * 
@@ -27,49 +28,71 @@
  */
 package org.apache.hadoop.fs.glusterfs;
 
+import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.FileUtil;
-import org.apache.hadoop.fs.LocalFileSystem;
+import org.apache.hadoop.fs.FilterFileSystem;
 import org.apache.hadoop.fs.Path;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+public class GlusterFileSystem extends FilterFileSystem{
 
-public class GlusterFileSystem extends LocalFileSystem{
-    
-    protected static final Logger log = LoggerFactory.getLogger(GlusterFileSystem.class);
-    
+    protected static final Logger log=LoggerFactory.getLogger(GlusterFileSystem.class);
+   
     public GlusterFileSystem(){
         super(new GlusterVolume());
+        Version v=new Version();
+        log.info("Initializing GlusterFS,  CRC disabled.");
+        log.info("GIT INFO="+v);
+        log.info("GIT_TAG="+v.getTag());
     }
-    
+
+    /** Convert a path to a File. */
+    public File pathToFile(Path path){
+        return ((GlusterVolume) fs).pathToFile(path);
+    }
+
+    /**
+     * Get file status.
+     */
+    public boolean exists(Path f) throws IOException{
+        File path=pathToFile(f);
+        if(path.exists()){
+            return true;
+        }else{
+            return false;
+        }
+    }
+
     public void setConf(Configuration conf){
-        log.info("Initializing GlusterFS");
+        log.info("Configuring GlusterFS");
         super.setConf(conf);
     }
 
     /*
-     * if GlusterFileSystem is the default filesystem, real local URLs come back without a file:/ scheme name (BUG!). the glusterfs
-     * file system is assumed.  force a schema. 
+     * if GlusterFileSystem is the default filesystem, real local URLs come back
+     * without a file:/ scheme name (BUG!). the glusterfs file system is
+     * assumed. force a schema.
      */
-    @Override
-    public void copyFromLocalFile(boolean delSrc, Path src, Path dst)  throws IOException {
-        FileSystem srcFs = new Path("file:/" + src.toString()).getFileSystem(getConf());
-        FileSystem dstFs = dst.getFileSystem(getConf());
+
+    public void copyFromLocalFile(boolean delSrc,Path src,Path dst) throws IOException{
+        FileSystem srcFs=new Path("file:/"+src.toString()).getFileSystem(getConf());
+        FileSystem dstFs=dst.getFileSystem(getConf());
         FileUtil.copy(srcFs, src, dstFs, dst, delSrc, getConf());
     }
 
-    @Override
-    public void copyToLocalFile(boolean delSrc, Path src, Path dst) throws IOException {
-      FileSystem srcFs = src.getFileSystem(getConf());
-      FileSystem dstFs = new Path("file:/" + dst.toString()).getFileSystem(getConf());
-      FileUtil.copy(srcFs, src, dstFs, dst, delSrc, getConf());
+    public void copyToLocalFile(boolean delSrc,Path src,Path dst) throws IOException{
+        FileSystem srcFs=src.getFileSystem(getConf());
+        FileSystem dstFs=new Path("file:/"+dst.toString()).getFileSystem(getConf());
+        FileUtil.copy(srcFs, src, dstFs, dst, delSrc, getConf());
     }
-    
+
     public String toString(){
-        return "Gluster File System";
+        return "Gluster File System, no CRC.";
     }
 }

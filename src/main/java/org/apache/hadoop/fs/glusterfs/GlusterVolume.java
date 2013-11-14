@@ -37,12 +37,12 @@ import org.slf4j.LoggerFactory;
 
 public class GlusterVolume extends RawLocalFileSystem{
 
-    static final Logger log = LoggerFactory.getLogger(GlusterFileSystem.class);
-    static final URI NAME = URI.create("glusterfs:///");
+    static final Logger log = LoggerFactory.getLogger(GlusterFileSystemCRC.class);
+    public static final URI NAME = URI.create("glusterfs:///");
     
     protected String root=null;
     
-    protected static final GlusterFSXattr attr = new GlusterFSXattr();
+    protected static GlusterFSXattr attr = null;
     
     public GlusterVolume(){}
     
@@ -53,12 +53,32 @@ public class GlusterVolume extends RawLocalFileSystem{
     public URI getUri() { return NAME; }
     
     public void setConf(Configuration conf){
-        log.info("initializing gluster volume..");
+        log.info("Initializing gluster volume..");
         super.setConf(conf);
+        String getfattrcmd = null;
         if(conf!=null){
          
             try{
                 root=conf.get("fs.glusterfs.mount", null);
+                getfattrcmd = conf.get("fs.glusterfs.getfattrcmd", null);
+                if(getfattrcmd!=null){
+                	attr = new GlusterFSXattr(getfattrcmd);
+                }else{
+                	attr = new GlusterFSXattr();
+                }
+                String jtSysDir = conf.get("mapreduce.jobtracker.system.dir", null);
+                Path mapredSysDirectory = null;
+                
+                if(jtSysDir!=null)
+                    mapredSysDirectory = new Path(jtSysDir);
+                else{
+                    mapredSysDirectory = new Path(conf.get("mapred.system.dir", "glusterfs:///mapred/system"));
+                }
+                
+                if(!exists(mapredSysDirectory)){
+                    mkdirs(mapredSysDirectory);
+                }
+                
                 //volName=conf.get("fs.glusterfs.volname", null);
                 //remoteGFSServer=conf.get("fs.glusterfs.server", null);
                 
@@ -68,11 +88,7 @@ public class GlusterVolume extends RawLocalFileSystem{
         }
         
     }
-    
-    public Path getWorkingDirectory() {
-        return new Path(NAME.toString() );
-    }
-    
+
     public File pathToFile(Path path) {
         String pathString = path.toUri().getRawPath();
      
@@ -84,9 +100,7 @@ public class GlusterVolume extends RawLocalFileSystem{
     }
     
     public Path fileToPath(File path) {
-        /* remove the /mnt/glustersfs part of the file path */
-        String pathString = path.toURI().getRawPath().substring(root.length());
-        return new Path(NAME.toString() + pathString);
+        return new Path(NAME.toString() + path.toURI().getRawPath().substring(root.length()));
     }
     
     public FileStatus[] listStatus(Path f) throws IOException {
@@ -109,7 +123,7 @@ public class GlusterVolume extends RawLocalFileSystem{
         int j = 0;
         for (int i = 0; i < names.length; i++) {
           try {
-            results[j] = getFileStatus(new Path(names[i].getAbsolutePath()));
+            results[j] = getFileStatus(fileToPath(names[i]));
             j++;
           } catch (FileNotFoundException e) {
             // ignore the files not found since the dir list may have have changed
@@ -120,8 +134,7 @@ public class GlusterVolume extends RawLocalFileSystem{
           return results;
         }
         return Arrays.copyOf(results, j);
-      }
-    
+    }
     
     public FileStatus getFileStatus(Path f) throws IOException {
         File path = pathToFile(f);
@@ -131,7 +144,6 @@ public class GlusterVolume extends RawLocalFileSystem{
           throw new FileNotFoundException( "File " + f + " does not exist.");
         }
       }
-
     
     public long getBlockSize(Path path) throws IOException{
         long blkSz;
