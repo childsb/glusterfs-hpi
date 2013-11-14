@@ -4,11 +4,11 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.apache.hadoop.fs.glusterfs</groupId>
-  <artifactId>hdp2-glusterfs</artifactId>
+  <artifactId>glusterfs-hpi</artifactId>
   <packaging>jar</packaging>
   <version>0.0.1</version>
-  <name>hdp2-glusterfs</name>
-  <url>https://github.com/gluster/hadoop-glusterfs</url>
+  <name>glusterfs-hpi</name>
+  <url>https://github.com/childsb/glusterfs-hpi</url>
  
   <dependencies>
     <!--
